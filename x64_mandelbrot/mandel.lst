@@ -1,0 +1,56 @@
+     1                                  section	.text
+     2                                  global  mandel
+     3                                  
+     4                                  mandel:
+     5 00000000 55                      	push 	rbp
+     6 00000001 53                      	push 	rbx					; int(16:16) x in ebx (lower 32 bits)
+     7 00000002 4154                    	push 	r12					; int(16:16) y in r12d (lower 32 bits)
+     8 00000004 4155                    	push 	r13					; int iteration in r13d (lower 32 bits)
+     9                                  
+    10 00000006 4831DB                  	xor 	rbx, rbx			; x = 0
+    11 00000009 4D31E4                  	xor 	r12, r12			; y = 0
+    12 0000000C 4D31ED                  	xor 	r13, r13			; iteration = 0
+    13                                  
+    14                                  main_loop:
+    15 0000000F 4863C3                  	movsxd	rax, ebx			; multiplicand x in rax (sign extend)
+    16 00000012 480FAFC0                	imul 	rax, rax			; x^2 in rax
+    17 00000016 48C1E810                	shr 	rax, 16				; addjust number to 16:16 format
+    18 0000001A 89C2                    	mov 	edx, eax			; move lower 32 bits of rax to edx (x^2)
+    19                                  
+    20 0000001C 4963C4                  	movsxd	rax, r12d			; multiplicand y in rax (sign extend)
+    21 0000001F 480FAFC0                	imul 	rax, rax			; y^2 in rax
+    22 00000023 48C1E810                	shr 	rax, 16				; addjust number to 16:16 format
+    23 00000027 89C1                    	mov 	ecx, eax			; move lower 32 bits of rax to ecx (y^2)
+    24                                  
+    25 00000029 89D0                    	mov 	eax, edx			; x^2 in eax
+    26 0000002B 01C8                    	add 	eax, ecx			; x^2 + y^2 in eax
+    27 0000002D 3D00000400              	cmp 	eax, 262144			; check if x^2 + y^2 > 4 (16:16 format)
+    28 00000032 7F2C                    	jg 		fin					; if so it is the end of loop
+    29                                  
+    30 00000034 29CA                    	sub 	edx, ecx			; x^2 - y^2 in edx
+    31 00000036 01FA                    	add 	edx, edi			; xtemp = x^2 - y^2 + re in edx
+    32                                  
+    33 00000038 4863CB                  	movsxd  rcx, ebx			; x in rcx
+    34 0000003B 48D1E1                  	shl 	rcx, 1				; 2x in rcx
+    35 0000003E 4963C4                  	movsxd 	rax, r12d			; y in rax
+    36 00000041 480FAFC1                	imul 	rax, rcx			; 2xy in rax
+    37 00000045 48C1E810                	shr 	rax, 16				; addjust number
+    38 00000049 01F0                    	add 	eax, esi			; 2xy + im in eax
+    39                                  
+    40 0000004B 4189C4                  	mov     r12d, eax			; y = 2xy + im
+    41 0000004E 89D3                    	mov     ebx, edx			; x = xtemp
+    42                                  
+    43 00000050 4489E9                  	mov 	ecx, r13d			; iteration in rcx
+    44 00000053 FFC1                    	inc 	ecx
+    45 00000055 4189CD                  	mov		r13d, ecx			; inc iterations by 1 and save it
+    46                                  
+    47 00000058 81F9FF000000            	cmp		ecx, 255			; check if iteration is bigger than 255
+    48 0000005E 72AF                    	jb		main_loop			; if so it is the end of loop
+    49                                  
+    50                                  fin:
+    51 00000060 4C89E8                  	mov     rax, r13	    	; return number of iterations
+    52 00000063 415D                    	pop 	r13
+    53 00000065 415C                    	pop 	r12
+    54 00000067 5B                      	pop 	rbx
+    55 00000068 5D                      	pop 	rbp
+    56 00000069 C3                      	ret

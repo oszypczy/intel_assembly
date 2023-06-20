@@ -1,0 +1,57 @@
+     1                                  section	.text
+     2                                  global  mandel
+     3                                  
+     4                                  mandel:
+     5 00000000 55                      	push    ebp             	; save caller's frame pointer (convention)
+     6 00000001 89E5                    	mov     ebp, esp        	; set base pointer to esp (convention)
+     7 00000003 83EC04                  	sub 	esp, 4				; allocate space on stack for 1 local value
+     8 00000006 53                      	push 	ebx					; save ebx
+     9 00000007 56                      	push 	esi					; save esi
+    10 00000008 57                      	push 	edi					; save edi
+    11                                  
+    12 00000009 C745FC00000000          	mov		dword [ebp-4], 0	; int(16:16) y = 0
+    13 00000010 BF00000000              	mov 	edi, 0				; int(16:16) x = 0
+    14 00000015 B900000000              	mov 	ecx, 0				; iteration = 0
+    15                                  
+    16                                  main_loop:
+    17 0000001A 89F8                    	mov		eax, edi			; multiplicand x in eax (deafult)
+    18 0000001C F7EF                    	imul 	edi					; mul x*x and result in edx:eax
+    19 0000001E 0FA4C210                	shld 	edx, eax, 16
+    20 00000022 89D3                    	mov 	ebx, edx			; x^2 in ebx
+    21                                  
+    22 00000024 8B45FC                  	mov		eax, [ebp-4]		; y in eax
+    23 00000027 F7E8                    	imul 	eax					; mul y*y and result in edx:eax
+    24 00000029 0FA4C210                	shld 	edx, eax, 16
+    25                                  
+    26 0000002D 89D6                    	mov 	esi, edx			; y^2 in esi
+    27 0000002F 89D8                    	mov 	eax, ebx			; x^2 in eax
+    28 00000031 01F0                    	add 	eax, esi			; x^2 + y^2 in eax
+    29 00000033 3D00000400              	cmp 	eax, 262144			; check if x^2 + y^2 > 4 (16:16 format)
+    30 00000038 7F21                    	jg 		fin					; if so it is the end of loop
+    31                                  
+    32 0000003A 29F3                    	sub 	ebx, esi			; x^2 - y^2 in ebx
+    33 0000003C 035D08                  	add 	ebx, [ebp+8]		; xtemp = x^2 - y^2 + re in ebx
+    34                                  
+    35 0000003F D1E7                    	shl 	edi, 1				; 2x in edi
+    36 00000041 8B45FC                  	mov 	eax, [ebp-4]		; y in eax
+    37 00000044 F7EF                    	imul 	edi					; 2xy in edx:eax
+    38 00000046 0FA4C210                	shld 	edx, eax, 16
+    39 0000004A 03550C                  	add		edx, [ebp+12]		; 2xy + im in edx
+    40                                  
+    41 0000004D 8955FC                  	mov 	[ebp-4], edx		; y = 2xy + im
+    42 00000050 89DF                    	mov     edi, ebx			; x = xtemp
+    43                                  
+    44 00000052 41                      	inc 	ecx
+    45 00000053 81F9FF000000            	cmp		ecx, 255			; check if iteration is bigger than 255
+    46 00000059 72BF                    	jb		main_loop			; if so it is the end of loop
+    47                                  
+    48                                  fin:
+    49 0000005B 89C8                    	mov     eax, ecx	    ; return number of iterations
+    50                                  
+    51 0000005D 5F                      	pop 	edi
+    52 0000005E 5E                      	pop 	esi
+    53 0000005F 5B                      	pop 	ebx
+    54                                  
+    55 00000060 89EC                    	mov 	esp, ebp
+    56 00000062 5D                      	pop     ebp
+    57 00000063 C3                      	ret
